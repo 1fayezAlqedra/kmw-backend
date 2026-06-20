@@ -3,47 +3,35 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Product;
+use Illuminate\Http\JsonResponse;
 
 class ProductController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * جلب جميع المنتجات مع صورها وتصنيفاتها
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        // جلب المنتجات مع عمل Eager Loading للصور والتصنيف لتسريع الاستعلام
+        $products = Product::with(['images', 'category'])->latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $products
+        ], 200);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * جلب تفاصيل منتج واحد محدد بكافة صوره
      */
-    public function store(Request $request)
+    public function show(string $id): JsonResponse
     {
-        //
-    }
+        $product = Product::with(['images', 'category'])->findOrFail($id);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return response()->json([
+            'success' => true,
+            'data' => $product
+        ], 200);
     }
 }
