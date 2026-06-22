@@ -8,16 +8,17 @@ return new class extends Migration {
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('product_images', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->string('image_path');
-            $table->boolean('is_main')->default(false);
-            $table->timestamp('created_at')->nullable();
-        });
-    }
+public function up(): void
+{
+    Schema::create('product_images', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+        $table->string('image_path');
+        $table->boolean('is_main')->default(false);
+        // هذا السطر يضيف كلاً من created_at و updated_at تلقائياً
+        $table->timestamps();
+    });
+}
     /**
      * Reverse the migrations.
      */

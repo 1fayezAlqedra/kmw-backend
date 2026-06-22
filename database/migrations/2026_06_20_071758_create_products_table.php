@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('name_en');
             $table->string('name_ar');
             $table->text('description_en');
+            $table->string('slug')->unique();
             $table->text('description_ar');
             $table->timestamps();
             $table->softDeletes();

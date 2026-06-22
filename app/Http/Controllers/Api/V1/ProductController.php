@@ -42,7 +42,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Product created successfully via Enterprise Service Pattern.',
-            'data'    => $product
+            'data' => $product
         ], 201);
     }
 
@@ -58,12 +58,16 @@ class ProductController extends Controller
     /**
      * حذف المنتج
      */
-    public function destroy(string $id): JsonResponse
-    {
-        $product = Product::findOrFail($id);
-        $product->images()->delete();
-        $product->delete();
+public function destroy(string $id): JsonResponse
+{
+    $product = Product::findOrFail($id);
 
-        return response()->json(['success' => true, 'message' => 'Product removed completely.'], 200);
-    }
+    // إذا أردت حذفاً مؤقتاً (Soft Delete):
+    $product->delete();
+
+    // إذا أردت حذفاً نهائياً (مثلاً إذا أردت حذف ملفات الصور فعلياً):
+    // $product->forceDelete();
+
+    return response()->json(['success' => true, 'message' => 'Product moved to trash.'], 200);
+}
 }
