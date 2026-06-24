@@ -13,15 +13,17 @@ class ProductControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected $admin;
+    protected $superAdmin;
+    protected $editor;
     protected $categoryId;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // إنشاء أدمن للاختبار
-        $this->admin = User::factory()->create(['role' => 'admin']);
+        // إنشاء المستخدمين بالأدوار الحقيقية للنظام
+        $this->superAdmin = User::factory()->create(['role' => 'super_admin']);
+        $this->editor     = User::factory()->create(['role' => 'editor']);
 
         // إنشاء تصنيف تجريبي
         $this->categoryId = DB::table('categories')->insertGetId([
@@ -61,7 +63,7 @@ class ProductControllerTest extends TestCase
                  ->assertJsonStructure(['success', 'data']);
     }
 
-    public function test_admin_can_successfully_create_product()
+    public function test_super_admin_can_successfully_create_product()
     {
         Storage::fake('public');
 
@@ -78,7 +80,7 @@ class ProductControllerTest extends TestCase
             ]
         ];
 
-        $response = $this->actingAs($this->admin, 'sanctum')
+        $response = $this->actingAs($this->superAdmin, 'sanctum')
                          ->postJson('/api/v1/products', $payload);
 
         $response->assertStatus(201);
@@ -89,10 +91,10 @@ class ProductControllerTest extends TestCase
     {
         $payload = [
             'category_id' => $this->categoryId,
-            'name_en'     => '' // حقل فارغ يسبب خطأ التحقق
+            'name_en'     => ''
         ];
 
-        $response = $this->actingAs($this->admin, 'sanctum')
+        $response = $this->actingAs($this->superAdmin, 'sanctum')
                          ->postJson('/api/v1/products', $payload);
 
         $response->assertStatus(422);
@@ -119,7 +121,43 @@ class ProductControllerTest extends TestCase
                  ->assertJson(['success' => true]);
     }
 
-    public function test_admin_can_completely_delete_product_and_its_images()
+    /**
+     * فحص التحديث: التأكد من أن الـ Editor يملك صلاحية تحديث المنتجات بنجاح
+     */
+    public function test_editor_can_successfully_update_product()
+    {
+        $productId = DB::table('products')->insertGetId([
+            'category_id'    => $this->categoryId,
+            'name_en'        => 'Old Name',
+            'name_ar'        => 'الاسم القديم',
+            'slug'           => 'old-name',
+            'description_en' => 'Desc',
+            'description_ar' => 'وصف',
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        $payload = [
+            'category_id'    => $this->categoryId,
+            'name_en'        => 'Updated Name By Editor',
+            'name_ar'        => 'اسم محدث بواسطة إيديتور',
+            'slug'           => 'updated-name-by-editor',
+            'description_en' => 'Updated Desc',
+            'description_ar' => 'وصف محدث'
+        ];
+
+        // الفحص باستخدام حساب الـ editor
+        $response = $this->actingAs($this->editor, 'sanctum')
+                         ->putJson("/api/v1/products/{$productId}", $payload);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('products', [
+            'id'      => $productId,
+            'name_en' => 'Updated Name By Editor'
+        ]);
+    }
+
+    public function test_super_admin_can_completely_delete_product_and_its_images()
     {
         $productId = DB::table('products')->insertGetId([
             'category_id'    => $this->categoryId,
@@ -139,12 +177,10 @@ class ProductControllerTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $response = $this->actingAs($this->admin, 'sanctum')
+        $response = $this->actingAs($this->superAdmin, 'sanctum')
                          ->deleteJson("/api/v1/products/{$productId}");
 
         $response->assertStatus(200);
-
-        // استخدام assertSoftDeleted لأنك فعلت SoftDeletes في الموديل
         $this->assertSoftDeleted('products', ['id' => $productId]);
     }
 }
