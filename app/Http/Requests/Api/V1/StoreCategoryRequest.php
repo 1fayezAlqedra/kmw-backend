@@ -22,11 +22,11 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name_en'        => 'required|string|max:255',
-            'name_ar'        => 'required|string|max:255',
+            'name_en' => 'required|string|max:255',
+            'name_ar' => 'required|string|max:255',
             'description_en' => 'nullable|string',
             'description_ar' => 'nullable|string',
-            'image'          => 'nullable|string', // حالياً نستقبل رابط الصورة كنص
+            'image_path' => 'nullable|string', // حالياً نستقبل رابط الصورة كنص
         ];
     }
 

@@ -44,6 +44,7 @@ class SecurityBoundaryTest extends TestCase
             'category_id'    => $categoryId,
             'name_ar'        => 'رخام كالاكاتا فاخر',
             'name_en'        => 'Premium Calacatta Marble',
+            'slug'           => 'premium-calacatta-marble',
             'description_ar' => 'وصف المنتج باللغة العربية',
             'description_en' => 'Product description in English',
         ];
@@ -55,7 +56,7 @@ class SecurityBoundaryTest extends TestCase
     }
 
     /**
-     * 3. اختبار أن الـ Editor يمتلك الصلاحية للحذف بنجاح (متوافق مع api.php الحقيقي)
+     * 3. اختبار أن الـ Editor يمتلك الصلاحية للحذف بنجاح
      */
     public function test_authorized_editor_can_successfully_delete_data_assets()
     {
@@ -74,6 +75,7 @@ class SecurityBoundaryTest extends TestCase
             'category_id'    => $categoryId,
             'name_ar'        => 'رخام تجريبي',
             'name_en'        => 'Test Marble',
+            'slug'           => 'test-marble-slug',
             'description_ar' => 'وصف تجريبي',
             'description_en' => 'Test description',
             'created_at'     => now(),
@@ -83,7 +85,6 @@ class SecurityBoundaryTest extends TestCase
         $response = $this->actingAs($editor, 'sanctum')
                          ->deleteJson("/api/v1/products/{$productId}");
 
-        // التحقق من نجاح الحذف بناءً على صلاحيات الـ api.php الحالية عندك
         $this->assertTrue($response->isSuccessful(), "Expected successful status code, got {$response->status()}");
     }
 }
