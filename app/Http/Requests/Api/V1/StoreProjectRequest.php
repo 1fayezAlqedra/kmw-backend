@@ -11,16 +11,16 @@ class StoreProjectRequest extends FormRequest
         return true; // تفعيل المرور
     }
 
+    // app/Http/Requests/Api/V1/StoreProjectRequest.php
     public function rules(): array
     {
         return [
-            'title_en'    => 'required|string|max:255',
-            'title_ar'    => 'required|string|max:255',
-            'description_en' => 'nullable|string',
-            'description_ar' => 'nullable|string',
-            'client_name'    => 'nullable|string|max:255',
-            'location'       => 'nullable|string|max:255',
-            'images'         => 'nullable|array',
+            'name_en' => 'required|string|max:255',
+            'name_ar' => 'required|string|max:255',
+            'description_en' => 'required|string',
+            'description_ar' => 'required|string',
+            'video_url' => 'nullable|url',
+            'images' => 'nullable|array',
         ];
     }
 }

@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('name_en');
             $table->string('name_ar');
+            $table->string('slug')->unique();
             $table->text('description_en');
             $table->text('description_ar');
             $table->string('video_url')->nullable();

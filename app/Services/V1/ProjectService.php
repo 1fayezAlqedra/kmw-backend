@@ -14,7 +14,7 @@ class ProjectService
     public function createProject(array $data): Project
     {
         // 1. توليد الـ Slug تلقائياً بناءً على العنوان الإنجليزي
-        $data['slug'] = Str::slug($data['title_en']);
+        $data['slug'] = Str::slug($data['name_en']);
 
         // 2. فصل الصور عن البيانات الأساسية للمشروع
         $images = $data['images'] ?? [];
@@ -28,7 +28,7 @@ class ProjectService
             foreach ($images as $imageUrl) {
                 ProjectImage::create([
                     'project_id' => $project->id,
-                    'image' => $imageUrl
+                    'image_path' => $imageUrl
                 ]);
             }
         }
