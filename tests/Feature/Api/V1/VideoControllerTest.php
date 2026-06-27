@@ -111,3 +111,4 @@ class VideoControllerTest extends TestCase
         $this->assertDatabaseMissing('videos', ['id' => $this->video->id]);
     }
 }
+
