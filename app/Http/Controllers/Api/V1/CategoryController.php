@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\StoreCategoryRequest; // استدعاء كلاس التحقق
-use App\Services\V1\CategoryService;             // استدعاء كلاس الخدمة
+use App\Http\Requests\Api\V1\StoreCategoryRequest;
+use App\Services\V1\CategoryService;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 
@@ -13,7 +13,7 @@ class CategoryController extends Controller
     protected $categoryService;
 
     /**
-     * حقن كلاس الخدمة عبر الـ Constructor
+     * Inject CategoryService via Constructor.
      */
     public function __construct(CategoryService $categoryService)
     {
@@ -21,7 +21,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Public: جلب جميع التصنيفات لموقع الزوار
+     * Public API: Retrieve all categories for the client-side website.
      */
     public function index(): JsonResponse
     {
@@ -30,57 +30,67 @@ class CategoryController extends Controller
     }
 
     /**
-     * Admin CMS: إضافة تصنيف جديد
+     * Admin CMS API: Create a new category.
      */
     public function store(StoreCategoryRequest $request): JsonResponse
     {
-        // نمرر البيانات المفحوصة والمضمونة للخدمة مباشرة
-        $category = $this->categoryService->createCategory($request->validated());
+        $category = $this->categoryService->createCategory(
+            $request->validated(),
+            $request->file('image_path')
+        );
 
         return response()->json([
             'success' => true,
             'message' => 'Category created successfully.',
-            'data'    => $category
+            'data' => $category
         ], 201);
     }
 
     /**
-     * Public: جلب تفاصيل تصنيف واحد مع منتجاته وصورها
+     * Admin CMS API: Update an existing category.
      */
-    public function show(string $slug): JsonResponse
+    public function update(StoreCategoryRequest $request, string $id): JsonResponse
     {
-        $category = Category::where('slug', $slug)
-            ->with(['products' => function($query) {
-                $query->with('images');
-            }])
+        $category = Category::findOrFail($id);
+
+        $updatedCategory = $this->categoryService->updateCategory(
+            $category,
+            $request->validated(),
+            $request->file('image_path')
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category updated successfully.',
+            'data' => $updatedCategory
+        ], 200);
+    }
+
+    /**
+     * Dual Purpose API: Get category details by numeric ID (for CMS) or Slug (for public frontend).
+     */
+    public function show(string $idOrSlug): JsonResponse
+    {
+        // Support finding category by primary key ID or unique URL slug
+        $category = Category::where('id', $idOrSlug)
+            ->orWhere('slug', $idOrSlug)
+            ->with([
+                'products' => function ($query) {
+                    $query->with('images');
+                }
+            ])
             ->firstOrFail();
 
         return response()->json(['success' => true, 'data' => $category], 200);
     }
 
     /**
-     * Admin CMS: تعديل تصنيف حالي
-     */
-    public function update(StoreCategoryRequest $request, string $id): JsonResponse
-    {
-        $category = Category::findOrFail($id);
-
-        // تمرير الموديل مع البيانات الجديدة للخدمة
-        $updatedCategory = $this->categoryService->updateCategory($category, $request->validated());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Category updated successfully.',
-            'data'    => $updatedCategory
-        ], 200);
-    }
-
-    /**
-     * Admin CMS: حذف تصنيف
+     * Admin CMS API: Delete a category and clean up stored assets.
      */
     public function destroy(string $id): JsonResponse
     {
         $category = Category::findOrFail($id);
+
         $category->delete();
 
         return response()->json([

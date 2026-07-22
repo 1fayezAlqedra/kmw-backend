@@ -4,27 +4,50 @@ namespace App\Services\V1;
 
 use App\Models\Category;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 
 class CategoryService
 {
     /**
-     * إنشاء تصنيف جديد وتوليد الـ Slug له
+     * Create a new category, generate slug, and handle image upload.
      */
-    public function createCategory(array $data): Category
+    public function createCategory(array $data, ?UploadedFile $image = null): Category
     {
-        // توليد الـ Slug تلقائياً من الاسم الإنجليزي
+        // Generate SEO-friendly slug from English name
         $data['slug'] = Str::slug($data['name_en']);
+
+        // Upload the image file if present, fallback to default category cover
+        if ($image) {
+            $path = $image->store('categories', 'public');
+            $data['image_path'] = $path;
+        } else {
+            $data['image_path'] = 'categories/default.png';
+        }
 
         return Category::create($data);
     }
 
     /**
-     * تحديث تصنيف موجود
+     * Update an existing category, regenerate slug, and update the uploaded image.
      */
-    public function updateCategory(Category $category, array $data): Category
+    public function updateCategory(Category $category, array $data, ?UploadedFile $image = null): Category
     {
-        // إعادة توليد الـ Slug إذا تغير الاسم الإنجليزي
-        $data['slug'] = Str::slug($data['name_en']);
+        // Regenerate SEO-friendly slug if provided or from name_en
+        if (!empty($data['name_en'])) {
+            $data['slug'] = Str::slug($data['name_en']);
+        }
+
+        // Handle image update and storage cleanup
+        if ($image) {
+            // Delete old custom image from disk if it exists and is not default
+            if ($category->image_path && $category->image_path !== 'categories/default.png') {
+                Storage::disk('public')->delete($category->image_path);
+            }
+
+            $path = $image->store('categories', 'public');
+            $data['image_path'] = $path;
+        }
 
         $category->update($data);
 
