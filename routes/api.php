@@ -25,7 +25,9 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
     Route::apiResource('products', ProductController::class)->only(['index', 'show']);
     Route::apiResource('projects', ProjectController::class)->only(['index', 'show']);
-    Route::apiResource('videos', VideoController::class)->only(['index']);
+
+    // REMOVED: Route::apiResource('videos', VideoController::class)->only(['index']);
+    // (تم حذفه من هنا لمنع Duplicate Route Entry مع المسارات المحمية بالأسفل)
 
     Route::get('settings', [SettingController::class, 'index']);
     Route::post('contact', [ContactController::class, 'store']);
@@ -63,9 +65,12 @@ Route::prefix('v1')->group(function () {
         Route::delete('projects/{id}', [ProjectController::class, 'destroy']);
 
         // Protected Video gallery management routes
-        Route::post('videos', [VideoController::class, 'store']);
-        Route::put('videos/{id}', [VideoController::class, 'update']);
-        Route::delete('videos/{id}', [VideoController::class, 'destroy']);
+        // REMOVED: Route::post('videos', [VideoController::class, 'store']);
+        // REMOVED: Route::put('videos/{id}', [VideoController::class, 'update']);
+        // REMOVED: Route::delete('videos/{id}', [VideoController::class, 'destroy']);
+        // REMOVED: Route::get('/videos', [VideoController::class, 'index']);
+        // (تم استبدال المسارات الأربعة المفرقة بـ apiResource شامل وواضح لتفادي أي Route Collision)
+        Route::apiResource('videos', VideoController::class);
 
         // Protected System Settings routes
         Route::put('settings/{id}', [SettingController::class, 'update']);

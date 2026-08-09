@@ -14,9 +14,11 @@ class StoreVideoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
-            'url' => 'required|url', // تأكد أن الرابط صالح
-            'description' => 'nullable|string',
+            'title_en'       => 'required|string|max:255',
+            'title_ar'       => 'required|string|max:255',
+            'video_url'      => 'required|url',
+            'description_en' => 'nullable|string',
+            'description_ar' => 'nullable|string',
         ];
     }
 }
