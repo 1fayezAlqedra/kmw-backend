@@ -5,34 +5,103 @@ namespace App\Services\V1;
 use App\Models\Project;
 use App\Models\ProjectImage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ProjectService
 {
     /**
-     * منطق العمل الخاص بإنشاء مشروع جديد وحفظ صوره
+     * Get all projects with relationships.
+     */
+    public function getAllProjects()
+    {
+        return Project::with(['category', 'images'])->latest()->paginate(10);
+    }
+
+    /**
+     * Create a new project.
      */
     public function createProject(array $data): Project
     {
-        // 1. توليد الـ Slug تلقائياً بناءً على العنوان الإنجليزي
-        $data['slug'] = Str::slug($data['name_en']);
+        // 🟢 آمن ضد الأخطاء مع توليد تلقائي للـ Slug
+        $project = Project::create([
+            'category_id'    => $data['category_id'] ?? null,
+            'name_en'        => $data['name_en'],
+            'name_ar'        => $data['name_ar'],
+            'slug'           => Str::slug($data['name_en']) . '-' . time(),
+            'description_en' => $data['description_en'],
+            'description_ar' => $data['description_ar'],
+        ]);
 
-        // 2. فصل الصور عن البيانات الأساسية للمشروع
-        $images = $data['images'] ?? [];
-        unset($data['images']);
-
-        // 3. حفظ المشروع في قاعدة البيانات
-        $project = Project::create($data);
-
-        // 4. حفظ ألبوم الصور المرتبط بالمشروع
-        if (!empty($images)) {
-            foreach ($images as $imageUrl) {
-                ProjectImage::create([
-                    'project_id' => $project->id,
-                    'image_path' => $imageUrl
-                ]);
+        // رفع الصور إن وجدت وبشكل آمن
+        if (!empty($data['images']) && is_array($data['images'])) {
+            foreach ($data['images'] as $file) {
+                if ($file) {
+                    $path = $file->store('projects', 'public');
+                    $project->images()->create([
+                        'image_path' => $path
+                    ]);
+                }
             }
         }
 
-        return $project->load('images');
+        return $project->load(['category', 'images']);
+    }
+
+    /**
+     * Update an existing project.
+     */
+    public function updateProject(Project $project, array $data): Project
+    {
+        $project->update([
+            'category_id'    => array_key_exists('category_id', $data) ? $data['category_id'] : $project->category_id,
+            'name_en'        => $data['name_en'] ?? $project->name_en,
+            'name_ar'        => $data['name_ar'] ?? $project->name_ar,
+            'slug'           => isset($data['name_en']) ? Str::slug($data['name_en']) . '-' . $project->id : $project->slug,
+            'description_en' => $data['description_en'] ?? $project->description_en,
+            'description_ar' => $data['description_ar'] ?? $project->description_ar,
+        ]);
+
+        // حذف الصور المحددة من الفرونت إند
+        if (!empty($data['deleted_images'])) {
+            $imagesToDelete = ProjectImage::whereIn('id', $data['deleted_images'])
+                ->where('project_id', $project->id)
+                ->get();
+
+            foreach ($imagesToDelete as $image) {
+                if (Storage::disk('public')->exists($image->image_path)) {
+                    Storage::disk('public')->delete($image->image_path);
+                }
+                $image->delete();
+            }
+        }
+
+        // إضافة الصور الجديدة
+        if (!empty($data['images']) && is_array($data['images'])) {
+            foreach ($data['images'] as $file) {
+                if ($file) {
+                    $path = $file->store('projects', 'public');
+                    $project->images()->create([
+                        'image_path' => $path
+                    ]);
+                }
+            }
+        }
+
+        return $project->load(['category', 'images']);
+    }
+
+    /**
+     * حذف المشروع كاملاً مع تنظيف صوره
+     */
+    public function deleteProject(Project $project): void
+    {
+        foreach ($project->images as $image) {
+            if (Storage::disk('public')->exists($image->image_path)) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+        }
+
+        $project->images()->delete();
+        $project->delete();
     }
 }
