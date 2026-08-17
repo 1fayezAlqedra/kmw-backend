@@ -8,15 +8,16 @@ class StoreContactRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return true; // متاح للزوار بدون سيشن
     }
 
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'message' => 'required|string|min:10',
+            'name'    => ['required', 'string', 'max:255'],
+            'email'   => ['required', 'email', 'max:255'],
+            'phone'   => ['nullable', 'string', 'max:50'],
+            'message' => ['required', 'string', 'max:5000'],
         ];
     }
 }

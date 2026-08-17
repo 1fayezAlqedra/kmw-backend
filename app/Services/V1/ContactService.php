@@ -6,9 +6,17 @@ use App\Models\Contact;
 
 class ContactService
 {
+    /**
+     * Store new visitor contact message.
+     */
     public function storeMessage(array $data): Contact
     {
-        // حفظ الرسالة في قاعدة البيانات
-        return Contact::create($data);
+        return Contact::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+            'message' => $data['message'],
+            'is_read' => false,
+        ]);
     }
 }
