@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\VideoController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\SettingController;
+use App\Http\Controllers\Api\V1\AdminUserController;
 use App\Http\Controllers\Api\V1\AuthController;
 
 /*
@@ -88,16 +89,22 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('videos', VideoController::class);
 
         // ------------------------------------------------------------------
-        // System Settings Management
-        // ------------------------------------------------------------------
-        Route::put('settings/{id}', [SettingController::class, 'update']);
-
-        // ------------------------------------------------------------------
         // Contact & Inquiries Dashboard Management
         // ------------------------------------------------------------------
         Route::get('contact', [ContactController::class, 'index']);
         Route::patch('contact/{id}/toggle-read', [ContactController::class, 'toggleRead']);
         Route::delete('contact/{id}', [ContactController::class, 'destroy']);
+
+        // ------------------------------------------------------------------
+        // Restricted Operations (Super Admin Only)
+        // ------------------------------------------------------------------
+        Route::middleware('role:super_admin')->group(function () {
+            // Batch update for system configurations
+            Route::post('settings', [SettingController::class, 'update']);
+
+            // Full Admin Accounts Management
+            Route::apiResource('admins', AdminUserController::class)->except(['show']);
+        });
 
     });
 

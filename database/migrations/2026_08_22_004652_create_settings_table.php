@@ -11,10 +11,10 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('settings', function (Blueprint $table) {
-            $table->id(); // أو يمكنك جعلها int وتغيير النوع يدوياً، لكن bigint (المثالي للاصطلاح) ممتاز ومستقبلي
+            $table->id();
             $table->string('key')->unique();
             $table->text('value')->nullable();
-            $table->string('type', 50);
+            $table->timestamps();
         });
     }
 

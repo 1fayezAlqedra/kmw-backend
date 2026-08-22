@@ -13,41 +13,21 @@ class CheckRole
      *
      * Usage:
      * ->middleware('role:admin')
-     * ->middleware('role:admin,editor')
+     * ->middleware('role:super_admin')
+     * ->middleware('role:admin,super_admin')
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $user = $request->user();
 
-        // 1. Unauthenticated
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.'
-            ], 401);
-        }
-
-        // 2. Super Admin override (Full access)
-        if (isset($user->is_super_admin) && $user->is_super_admin) {
+        if ($user && $user->role === 'super_admin') {
             return $next($request);
         }
 
-        // 3. If no roles specified → block access
-        if (empty($roles)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No role assigned to route.'
-            ], 403);
-        }
-
-        // 4. Check if user has one of allowed roles
-        if (!in_array($user->role, $roles)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized.'
-            ], 403);
-        }
-
-        return $next($request);
+        return response()->json([
+            'status' => false,
+            'message' => 'Unauthorized by CheckRole'
+        ], 403);
     }
 }
+
