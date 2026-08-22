@@ -2,28 +2,22 @@
 
 namespace Database\Factories;
 
-use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
-/**
- * @extends Factory<Product>
- */
 class ProductFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
+        $name = $this->faker->unique()->words(3, true);
         return [
-            'category_id' => \App\Models\Category::factory(), // لربطها بـ Category factory
-            'name_en' => fake()->word(),
-            'name_ar' => fake()->word(),
-            'slug' => fake()->unique()->slug(), // مهم جداً
-            'description_en' => fake()->text(),
-            'description_ar' => fake()->text(),
+            'category_id' => Category::factory(),
+            'name_en' => ucfirst($name),
+            'name_ar' => 'منتج ' . $name,
+            'slug' => Str::slug($name),
+            'description_en' => $this->faker->paragraph(),
+            'description_ar' => $this->faker->paragraph(),
         ];
     }
 }
