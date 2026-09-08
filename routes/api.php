@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProjectController;
+use App\Http\Controllers\Api\V1\ProjectCategoryController;
 use App\Http\Controllers\Api\V1\VideoController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\SettingController;
@@ -33,6 +34,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
     Route::apiResource('products', ProductController::class)->only(['index', 'show']);
     Route::apiResource('projects', ProjectController::class)->only(['index', 'show']);
+    Route::apiResource('project-categories', ProjectCategoryController::class)->only(['index', 'show']);
 
     // Public system configurations and settings retrieval
     Route::get('settings', [SettingController::class, 'index']);
@@ -44,7 +46,7 @@ Route::prefix('v1')->group(function () {
     // 2. Authentication Gateway
     // ======================================================================
 
-    // Admin credential verification & Sanction Bearer Token issuance
+    // Admin credential verification & Sanctum Bearer Token issuance
     Route::post('auth/login', [AuthController::class, 'login']);
 
     // ======================================================================
@@ -63,6 +65,7 @@ Route::prefix('v1')->group(function () {
         // ------------------------------------------------------------------
         Route::post('categories', [CategoryController::class, 'store']);
         Route::put('categories/{id}', [CategoryController::class, 'update']);
+        Route::post('categories/{id}', [CategoryController::class, 'update']); // For FormData spoofing
         Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
 
         // ------------------------------------------------------------------
@@ -70,6 +73,7 @@ Route::prefix('v1')->group(function () {
         // ------------------------------------------------------------------
         Route::post('products', [ProductController::class, 'store']);
         Route::put('products/{id}', [ProductController::class, 'update']);
+        Route::post('products/{id}', [ProductController::class, 'update']); // For FormData spoofing
         Route::delete('products/{id}', [ProductController::class, 'destroy']);
 
         // Isolated media management for product galleries
@@ -80,7 +84,17 @@ Route::prefix('v1')->group(function () {
         // ------------------------------------------------------------------
         Route::post('projects', [ProjectController::class, 'store']);
         Route::put('projects/{id}', [ProjectController::class, 'update']);
+        Route::post('projects/{id}', [ProjectController::class, 'update']); // For FormData spoofing
         Route::delete('projects/{id}', [ProjectController::class, 'destroy']);
+
+        // ------------------------------------------------------------------
+        // Project Category Management (Service-Layer Architecture)
+        // Supports Multilingual Schema (AR/EN) and Media Handling
+        // ------------------------------------------------------------------
+        Route::post('project-categories', [ProjectCategoryController::class, 'store']);
+        Route::put('project-categories/{id}', [ProjectCategoryController::class, 'update']);
+        Route::post('project-categories/{id}', [ProjectCategoryController::class, 'update']);
+        Route::delete('project-categories/{id}', [ProjectCategoryController::class, 'destroy']);
 
         // ------------------------------------------------------------------
         // Video Gallery Management

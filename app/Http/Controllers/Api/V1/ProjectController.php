@@ -20,34 +20,40 @@ class ProjectController extends Controller
 
     public function index(): JsonResponse
     {
-        $projects = Project::with(['category', 'images'])->latest()->get();
+        $projects = $this->projectService->getAllProjects();
         return response()->json(['success' => true, 'data' => $projects], 200);
     }
 
-    public function store(StoreProjectRequest $request)
+    public function store(StoreProjectRequest $request): JsonResponse
     {
         try {
             $project = $this->projectService->createProject($request->validated());
-            return response()->json($project, 201);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Project created successfully.',
+                'data'    => $project
+            ], 201);
         } catch (\Throwable $e) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
             ], 500);
         }
     }
 
-public function show(string $identifier): JsonResponse
-{
-    $project = Project::where('id', $identifier)
-        ->orWhere('slug', $identifier)
-        ->with(['category', 'images'])
-        ->firstOrFail();
+    public function show(string $identifier): JsonResponse
+    {
+        $project = Project::where('id', $identifier)
+            ->orWhere('slug', $identifier)
+            ->with(['category', 'images'])
+            ->firstOrFail();
 
-    return response()->json(['success' => true, 'data' => $project], 200);
-}
+        return response()->json(['success' => true, 'data' => $project], 200);
+    }
+
     public function update(UpdateProjectRequest $request, string $id): JsonResponse
     {
         $project = Project::findOrFail($id);
@@ -56,7 +62,7 @@ public function show(string $identifier): JsonResponse
         return response()->json([
             'success' => true,
             'message' => 'Project updated successfully.',
-            'data' => $updatedProject
+            'data'    => $updatedProject
         ], 200);
     }
 
@@ -65,6 +71,9 @@ public function show(string $identifier): JsonResponse
         $project = Project::findOrFail($id);
         $this->projectService->deleteProject($project);
 
-        return response()->json(['success' => true, 'message' => 'Project removed completely.'], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Project removed completely.'
+        ], 200);
     }
 }

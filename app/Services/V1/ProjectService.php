@@ -22,14 +22,13 @@ class ProjectService
      */
     public function createProject(array $data): Project
     {
-        // 🟢 آمن ضد الأخطاء مع توليد تلقائي للـ Slug
         $project = Project::create([
-            'category_id'    => $data['category_id'] ?? null,
-            'name_en'        => $data['name_en'],
-            'name_ar'        => $data['name_ar'],
-            'slug'           => Str::slug($data['name_en']) . '-' . time(),
-            'description_en' => $data['description_en'],
-            'description_ar' => $data['description_ar'],
+            'project_category_id' => $data['project_category_id'] ?? null,
+            'name_en'             => $data['name_en'],
+            'name_ar'             => $data['name_ar'],
+            'slug'                => Str::slug($data['name_en']) . '-' . time(),
+            'description_en'      => $data['description_en'] ?? null,
+            'description_ar'      => $data['description_ar'] ?? null,
         ]);
 
         // رفع الصور إن وجدت وبشكل آمن
@@ -53,25 +52,29 @@ class ProjectService
     public function updateProject(Project $project, array $data): Project
     {
         $project->update([
-            'category_id'    => array_key_exists('category_id', $data) ? $data['category_id'] : $project->category_id,
-            'name_en'        => $data['name_en'] ?? $project->name_en,
-            'name_ar'        => $data['name_ar'] ?? $project->name_ar,
-            'slug'           => isset($data['name_en']) ? Str::slug($data['name_en']) . '-' . $project->id : $project->slug,
-            'description_en' => $data['description_en'] ?? $project->description_en,
-            'description_ar' => $data['description_ar'] ?? $project->description_ar,
+            'project_category_id' => array_key_exists('project_category_id', $data) ? $data['project_category_id'] : $project->project_category_id,
+            'name_en'             => $data['name_en'] ?? $project->name_en,
+            'name_ar'             => $data['name_ar'] ?? $project->name_ar,
+            'slug'                => isset($data['name_en']) ? Str::slug($data['name_en']) . '-' . $project->id : $project->slug,
+            'description_en'      => $data['description_en'] ?? $project->description_en,
+            'description_ar'      => $data['description_ar'] ?? $project->description_ar,
         ]);
 
         // حذف الصور المحددة من الفرونت إند
         if (!empty($data['deleted_images'])) {
-            $imagesToDelete = ProjectImage::whereIn('id', $data['deleted_images'])
-                ->where('project_id', $project->id)
-                ->get();
+            $deletedImages = is_string($data['deleted_images']) ? json_decode($data['deleted_images'], true) : $data['deleted_images'];
 
-            foreach ($imagesToDelete as $image) {
-                if (Storage::disk('public')->exists($image->image_path)) {
-                    Storage::disk('public')->delete($image->image_path);
+            if (is_array($deletedImages)) {
+                $imagesToDelete = ProjectImage::whereIn('id', $deletedImages)
+                    ->where('project_id', $project->id)
+                    ->get();
+
+                foreach ($imagesToDelete as $image) {
+                    if (Storage::disk('public')->exists($image->image_path)) {
+                        Storage::disk('public')->delete($image->image_path);
+                    }
+                    $image->delete();
                 }
-                $image->delete();
             }
         }
 

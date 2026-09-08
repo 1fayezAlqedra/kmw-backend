@@ -22,19 +22,34 @@ class UpdateProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id'      => 'required|exists:categories,id',
+            // التعديل على جدول تصنيفات المشاريع الجديد
+            'category_id'      => 'sometimes|nullable|exists:project_categories,id',
             'name_en'          => 'sometimes|required|string|max:255',
             'name_ar'          => 'sometimes|required|string|max:255',
             'description_en'   => 'sometimes|required|string',
             'description_ar'   => 'sometimes|required|string',
+            'video_url'        => 'nullable|url',
 
-            // رفع صور جديدة
+            // رفع صور جديدة (باستخدام file لتفادي مشاكل FormData)
             'images'           => 'nullable|array',
-            'images.*'         => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
+            'images.*'         => 'file|mimes:jpeg,png,jpg,webp,gif|max:5120',
 
-            // 🔴 التعديل الجوهري: السماح باستقبال مصفوفة الصور المراد حذفها
-            'deleted_images'   => 'nullable|array',
-            'deleted_images.*' => 'integer|exists:project_images,id',
+            // مصفوفة الصور المراد حذفها
+            'deleted_images'   => 'nullable',
+        ];
+    }
+
+    /**
+     * Custom messages for validation errors.
+     */
+    public function messages(): array
+    {
+        return [
+            'category_id.exists' => 'تصنيف المشروع المختار غير موجود.',
+            'video_url.url'      => 'رابط الفيديو غير صحيح.',
+            'images.*.file'      => 'الملفات المرفقة يجب أن تكون ملفات صالحة.',
+            'images.*.mimes'     => 'صيغ الصور المسموحة هي: jpeg, png, jpg, webp, gif.',
+            'images.*.max'       => 'حجم الصورة الواحدة يجب ألا يتجاوز 5 ميجابايت.',
         ];
     }
 }
