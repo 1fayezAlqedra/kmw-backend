@@ -30,7 +30,9 @@ class ProjectCategoryController extends Controller
     {
         $validated = $request->validated();
 
-        if (!$request->hasFile('image')) {
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image');
+        } else {
             unset($validated['image']);
         }
 
@@ -43,8 +45,10 @@ class ProjectCategoryController extends Controller
         ], 201);
     }
 
-    public function show(ProjectCategory $projectCategory): JsonResponse
+    public function show($id): JsonResponse
     {
+        $projectCategory = ProjectCategory::findOrFail($id);
+
         return response()->json([
             'success' => true,
             'data'    => $projectCategory
@@ -52,32 +56,42 @@ class ProjectCategoryController extends Controller
     }
 
     public function update(UpdateProjectCategoryRequest $request, $id): JsonResponse
-{
-    // جلب العنصر يدويًا بـ ID لتفادي أي فشل في الـ Route Model Binding
-    $projectCategory = ProjectCategory::findOrFail($id);
-
-    $validated = $request->validated();
-
-    if (!$request->hasFile('image')) {
-        unset($validated['image']);
-    }
-
-    $category = $this->categoryService->updateCategory($projectCategory, $validated);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Project category updated successfully.',
-        'data'    => $category->fresh()
-    ]);
-}
-
-    public function destroy(ProjectCategory $projectCategory): JsonResponse
     {
-        $this->categoryService->deleteCategory($projectCategory);
+        $projectCategory = ProjectCategory::findOrFail($id);
+
+        $validated = $request->validated();
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image');
+        } else {
+            unset($validated['image']);
+        }
+
+        $category = $this->categoryService->updateCategory($projectCategory, $validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Project category deleted successfully.'
+            'message' => 'Project category updated successfully.',
+            'data'    => $category->fresh()
         ]);
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $projectCategory = ProjectCategory::findOrFail($id);
+
+        $deleted = $this->categoryService->deleteCategory($projectCategory);
+
+        if ($deleted) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Project category deleted successfully.'
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to delete project category.'
+        ], 500);
     }
 }

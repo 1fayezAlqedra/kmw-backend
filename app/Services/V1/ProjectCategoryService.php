@@ -46,48 +46,58 @@ class ProjectCategoryService
     /**
      * تحديث بيانات التصنيف
      */
-public function updateCategory(ProjectCategory $category, array $data): ProjectCategory
-{
-    // 1. إعادة حساب الـ slug عند تغيير أي اسم
-    if (!empty($data['name_en']) || !empty($data['name_ar'])) {
-        $nameForSlug = $data['name_en'] ?? $data['name_ar'];
-        $originalSlug = Str::slug($nameForSlug);
-        $slug = $originalSlug;
-        $count = 1;
+    public function updateCategory(ProjectCategory $category, array $data): ProjectCategory
+    {
+        // 1. إعادة حساب الـ slug فقط إذا تغير الاسم فعلياً عن الاسم المخزن بالداتابيز
+        $newNameEn = $data['name_en'] ?? $category->name_en;
+        $newNameAr = $data['name_ar'] ?? $category->name_ar;
 
-        while (ProjectCategory::where('slug', $slug)->where('id', '!=', $category->id)->exists()) {
-            $slug = "{$originalSlug}-{$count}";
-            $count++;
+        $hasNameChanged = (isset($data['name_en']) && $data['name_en'] !== $category->name_en) ||
+                          (isset($data['name_ar']) && $data['name_ar'] !== $category->name_ar);
+
+        if ($hasNameChanged) {
+            $nameForSlug = $newNameEn ?: $newNameAr;
+            $originalSlug = Str::slug($nameForSlug);
+            $slug = $originalSlug;
+            $count = 1;
+
+            while (ProjectCategory::where('slug', $slug)->where('id', '!=', $category->id)->exists()) {
+                $slug = "{$originalSlug}-{$count}";
+                $count++;
+            }
+
+            $data['slug'] = $slug;
         }
 
-        $data['slug'] = $slug;
-    }
-
-    // 2. معالجة رفع الصورة إذا تم إرفاق ملف جديد
-    if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
-        if ($category->image && Storage::disk('public')->exists($category->image)) {
-            Storage::disk('public')->delete($category->image);
+        // 2. معالجة رفع الصورة إذا تم إرفاق ملف جديد
+        if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
+            if ($category->image && Storage::disk('public')->exists($category->image)) {
+                Storage::disk('public')->delete($category->image);
+            }
+            $data['image'] = $data['image']->store('project_categories', 'public');
+        } else {
+            unset($data['image']);
         }
-        $data['image'] = $data['image']->store('project_categories', 'public');
-    } else {
-        unset($data['image']);
+
+        // 3. التنفيذ المباشر للاستعلام UPDATE في DB
+        $category->update($data);
+
+        return $category;
     }
-
-    // 3. التنفيذ المباشر للاستعلام UPDATE في DB
-    $category->update($data);
-
-    return $category;
-}
 
     /**
      * حذف التصنيف مع صورته
      */
-    public function deleteCategory(ProjectCategory $category): bool
+    public function deleteCategory(ProjectCategory|int|string $category): bool
     {
+        if (!$category instanceof ProjectCategory) {
+            $category = ProjectCategory::findOrFail($category);
+        }
+
         if ($category->image && Storage::disk('public')->exists($category->image)) {
             Storage::disk('public')->delete($category->image);
         }
 
-        return $category->delete();
+        return (bool) $category->delete();
     }
 }

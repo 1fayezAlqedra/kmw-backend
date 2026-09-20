@@ -14,23 +14,24 @@ class StoreProjectCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name_ar'        => 'required|string|max:255|unique:project_categories,name_ar',
-            'name_en'        => 'required|string|max:255|unique:project_categories,name_en',
+            'name_ar'        => 'required|string|max:255',
+            'name_en'        => 'required|string|max:255',
+            'slug'           => 'nullable|string|max:255|unique:project_categories,slug',
+            'image'          => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'description_ar' => 'nullable|string',
             'description_en' => 'nullable|string',
-            'image'          => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
     }
 
-    /**
-     * تجهيز البيانات قبل بدء الـ Validation لضمان عدم تمرير قيم نصية خاطئة للصور
-     */
-    protected function prepareForValidation(): void
+    public function messages(): array
     {
-        if ($this->image === 'null' || $this->image === 'undefined') {
-            $this->merge([
-                'image' => null,
-            ]);
-        }
+        return [
+            'name_ar.required' => 'اسم القسم بالعربي مطلوب.',
+            'name_en.required' => 'اسم القسم بالإنجليزي مطلوب.',
+            'slug.unique'      => 'الـ slug مستخدم من قبل.',
+            'image.image'      => 'الملف المرفق يجب أن يكون صورة.',
+            'image.mimes'      => 'صيغ الصور المسموحة هي: jpeg, png, jpg, webp, gif.',
+            'image.max'        => 'حجم الصورة يجب ألا يتجاوز 5 ميجابايت.',
+        ];
     }
 }

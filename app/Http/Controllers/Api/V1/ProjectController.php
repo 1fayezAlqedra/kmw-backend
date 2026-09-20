@@ -18,16 +18,37 @@ class ProjectController extends Controller
         $this->projectService = $projectService;
     }
 
+    /**
+     * عرض جميع المشاريع مع التصنيفات والصور
+     */
     public function index(): JsonResponse
     {
-        $projects = $this->projectService->getAllProjects();
-        return response()->json(['success' => true, 'data' => $projects], 200);
+        try {
+            $projects = $this->projectService->getAllProjects();
+            return response()->json([
+                'success' => true,
+                'data'    => $projects
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
+    /**
+     * إضافة مشروع جديد
+     */
     public function store(StoreProjectRequest $request): JsonResponse
     {
         try {
-            $project = $this->projectService->createProject($request->validated());
+            // دمج البيانات المعتمدة مع ملفات الصور لضمان وصولها إلى الـ Service
+            $data = array_merge($request->validated(), [
+                'images' => $request->file('images', [])
+            ]);
+
+            $project = $this->projectService->createProject($data);
 
             return response()->json([
                 'success' => true,
@@ -44,36 +65,77 @@ class ProjectController extends Controller
         }
     }
 
+    /**
+     * عرض مشروع محدد بناءً على الـ ID أو الـ Slug
+     */
     public function show(string $identifier): JsonResponse
     {
-        $project = Project::where('id', $identifier)
-            ->orWhere('slug', $identifier)
-            ->with(['category', 'images'])
-            ->firstOrFail();
+        try {
+            $project = Project::where('id', $identifier)
+                ->orWhere('slug', $identifier)
+                ->with(['category', 'images'])
+                ->firstOrFail();
 
-        return response()->json(['success' => true, 'data' => $project], 200);
+            return response()->json([
+                'success' => true,
+                'data'    => $project
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'المشروع غير موجود.'
+            ], 404);
+        }
     }
 
+    /**
+     * تحديث بيانات مشروع قائم
+     */
     public function update(UpdateProjectRequest $request, string $id): JsonResponse
     {
-        $project = Project::findOrFail($id);
-        $updatedProject = $this->projectService->updateProject($project, $request->validated());
+        try {
+            $project = Project::findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Project updated successfully.',
-            'data'    => $updatedProject
-        ], 200);
+            // دمج البيانات المعتمدة مع الملفات المرفوعة لضمان قراءة الصور
+            $data = array_merge($request->validated(), [
+                'images' => $request->file('images', [])
+            ]);
+
+            $updatedProject = $this->projectService->updateProject($project, $data);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Project updated successfully.',
+                'data'    => $updatedProject
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ], 500);
+        }
     }
 
+    /**
+     * حذف مشروع
+     */
     public function destroy(string $id): JsonResponse
     {
-        $project = Project::findOrFail($id);
-        $this->projectService->deleteProject($project);
+        try {
+            $project = Project::findOrFail($id);
+            $this->projectService->deleteProject($project);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Project removed completely.'
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Project removed completely.'
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

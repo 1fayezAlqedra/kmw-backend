@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,19 +8,16 @@ class ProjectCategory extends Model
 {
     use HasFactory;
 
-protected $fillable = [
-    'name_en',
-    'name_ar',
-    'slug',
-    'description_en',
-    'description_ar',
-    'image',
-];
+    protected $fillable = [
+        'name_en',
+        'name_ar',
+        'slug',
+        'description_en',
+        'description_ar',
+        'image',
+    ];
 
-    /**
-     * العلاقة مع المشاريع
-     */
-public function projects()
+    public function projects()
     {
         return $this->hasMany(Project::class, 'category_id');
     }

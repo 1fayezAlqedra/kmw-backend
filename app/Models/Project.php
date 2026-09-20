@@ -6,13 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Project extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'category_id',
+        'category_id', // ✔️ مطابقة اسم العمود في قاعدة البيانات
         'name_en',
         'name_ar',
         'slug',
@@ -24,9 +25,9 @@ class Project extends Model
     /**
      * علاقة المشروع بالتصنيف
      */
-    public function category()
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(ProjectCategory::class, 'category_id');
+        return $this->belongsTo(ProjectCategory::class, 'category_id'); // ✔️ استخدام category_id
     }
 
     /**
@@ -34,6 +35,6 @@ class Project extends Model
      */
     public function images(): HasMany
     {
-        return $this->hasMany(ProjectImage::class);
+        return $this->hasMany(ProjectImage::class, 'project_id');
     }
 }
